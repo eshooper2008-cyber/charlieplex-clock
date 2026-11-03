@@ -1,0 +1,7 @@
+# STM32CubeIDE build output
+Debug/
+Release/
+
+# OS junk
+.DS_Store
+Thumbs.db
