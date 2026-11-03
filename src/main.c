@@ -116,7 +116,7 @@ struct LED CLOCK[] = {
    {GPIO_PIN_4, GPIO_PIN_15},    // {P6, P4}
    {GPIO_PIN_7, GPIO_PIN_15},    // {P5, P4}
    {GPIO_PIN_9, GPIO_PIN_15},    // {P3, P4}
-   {GPIO_PIN_6, GPIO_PIN_15},    // {P2, P4}
+   {GPIO_PIN_8, GPIO_PIN_15},    // {P2, P4}
    {GPIO_PIN_10, GPIO_PIN_15},   // {P1, P4}
    {GPIO_PIN_10, GPIO_PIN_9},    // {P1, P3}
    {GPIO_PIN_8, GPIO_PIN_9},     // {P2, P3}
@@ -129,12 +129,12 @@ struct LED CLOCK[] = {
    {GPIO_PIN_2, GPIO_PIN_9},     // {P10, P3}
    {GPIO_PIN_1, GPIO_PIN_9},     // {P11, P3}
    {GPIO_PIN_0, GPIO_PIN_9},     // {P12, P3}
-   {GPIO_PIN_10, GPIO_PIN_6},    // {P1, P2}
-   {GPIO_PIN_9, GPIO_PIN_6},     // {P3, P2}
-   {GPIO_PIN_15, GPIO_PIN_6},    // {P4, P2}
-   {GPIO_PIN_7, GPIO_PIN_6},     // {P5, P2}
-   {GPIO_PIN_4, GPIO_PIN_6},     // {P6, P2}
-   {GPIO_PIN_5, GPIO_PIN_6},     // {P7, P2}
+   {GPIO_PIN_10, GPIO_PIN_8},    // {P1, P2}
+   {GPIO_PIN_9, GPIO_PIN_8},     // {P3, P2}
+   {GPIO_PIN_15, GPIO_PIN_8},    // {P4, P2}
+   {GPIO_PIN_7, GPIO_PIN_8},     // {P5, P2}
+   {GPIO_PIN_4, GPIO_PIN_8},     // {P6, P2}
+   {GPIO_PIN_5, GPIO_PIN_8},     // {P7, P2}
    {GPIO_PIN_3, GPIO_PIN_10},    // {P9, P1}
    {GPIO_PIN_2, GPIO_PIN_10},    // {P10, P1}
    {GPIO_PIN_1, GPIO_PIN_10},    // {P11, P1}
@@ -281,9 +281,18 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
     if(GPIO_Pin == GPIO_PIN_12)                                  // Check PB12 sourced the interrupt
     {
+        static uint32_t last_press = 0;                          // Debounce: ignore bounces within 200 ms
+        if(HAL_GetTick() - last_press < 200) return;
+        last_press = HAL_GetTick();
+
         my_interrupt_count = (my_interrupt_count + 1) % 2;       // Toggle mode
+        if(my_interrupt_count == 1){                             // If now entering "set" mode
+            set_hour = hour;                                     // Start editing from the current time
+            set_min = min;
+            set_sec = 0;
+        }
         if(my_interrupt_count == 0){                             // If now leaving "set" mode
-            RTC_TimeTypeDef sTime;
+            RTC_TimeTypeDef sTime = {0};
             sTime.Hours = set_hour;                              // Set hour from user val
             sTime.Minutes = set_min;                             // Set minute from user val
             sTime.Seconds = set_sec;                             // Set second from user val
